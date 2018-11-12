@@ -24,6 +24,7 @@ func routeHandler(c *gin.Context) {
 	teamId := c.DefaultPostForm("team_id", "")
 	if teamId == "" {
 		c.String(http.StatusOK, "Failed")
+		return
 	}
 	newClient := &http.Client{Timeout: 10 * time.Second}
 
