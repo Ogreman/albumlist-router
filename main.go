@@ -21,7 +21,7 @@ func getJSON(client *http.Client, request *http.Request, target interface{}) err
 }
 
 func routeHandler(c *gin.Context) {
-	teamId := c.PostForm("team_id")
+	teamId := c.DefaultPostForm("team_id", "")
 	if teamId == "" {
 		c.String(http.StatusOK, "Failed")
 	}
