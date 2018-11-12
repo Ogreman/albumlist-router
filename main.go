@@ -21,25 +21,28 @@ func getJSON(client *http.Client, request *http.Request, target interface{}) err
 }
 
 func routeHandler(c *gin.Context) {
-	team_id := c.PostForm("team_id")
+	teamId := c.PostForm("team_id")
+	if teamId == "" {
+		c.String(http.StatusOK, "Failed")
+	}
 	newClient := &http.Client{Timeout: 10 * time.Second}
 
-	url := fmt.Sprintf("https://albumlistbot.herokuapp.com/api/mapping/%s", team_id)
-	bot_req, _ := http.NewRequest("GET", url, nil)
-	bot_req.Header.Set("Content-Type", "application/json")
+	url := fmt.Sprintf("https://albumlistbot.herokuapp.com/api/mapping/%s", teamId)
+	botRequest, _ := http.NewRequest("GET", url, nil)
+	botRequest.Header.Set("Content-Type", "application/json")
 
-	var app_url string
-	getJSON(newClient, bot_req, &app_url)
+	var appUrl string
+	getJSON(newClient, botRequest, &appUrl)
 
 	uri := c.Query("uri")
-	full_url := fmt.Sprintf("%sslack/%s", app_url, uri)
-	log.Printf("Routing to: %s", full_url)
-	app_req, _ := http.NewRequest("POST", full_url, nil)
+	fullUrl := fmt.Sprintf("%sslack/%s", appUrl, uri)
+	log.Printf("Routing to: %s", fullUrl)
+	appRequest, _ := http.NewRequest("POST", fullUrl, nil)
 
-	var app_response struct{}
-	getJSON(newClient, app_req, &app_response)
+	var appResponse struct{}
+	getJSON(newClient, appRequest, &appResponse)
 
-	c.JSON(http.StatusOK, app_response)
+	c.JSON(http.StatusOK, appResponse)
 }
 
 func main() {
