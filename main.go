@@ -7,6 +7,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -21,34 +23,42 @@ func getJSON(client *http.Client, request *http.Request, target interface{}) err
 }
 
 func routeHandler(c *gin.Context) {
+	botUrl := os.Getenv("BOT_URL")
+	if botUrl == "" {
+		botUrl = "https://albumlistbot.herokuapp.com"
+	}
+
+	c.Request.ParseForm()
+
 	teamId := c.DefaultPostForm("team_id", "")
 	if teamId == "" {
 		c.String(http.StatusOK, "Failed")
 		return
 	}
+
 	newClient := &http.Client{Timeout: 10 * time.Second}
 
-	url := fmt.Sprintf("https://albumlistbot.herokuapp.com/api/mapping/%s", teamId)
+	url := fmt.Sprintf("%s/api/mapping/%s", botUrl, teamId)
 	botRequest, _ := http.NewRequest("GET", url, nil)
 	botRequest.Header.Set("Content-Type", "application/json")
-
 	var appUrl string
-	getJSON(newClient, botRequest, &appUrl)
+		getJSON(newClient, botRequest, &appUrl)
 
 	uri := c.Query("uri")
 	fullUrl := fmt.Sprintf("%sslack/%s", appUrl, uri)
 	log.Printf("Routing to: %s", fullUrl)
-	appRequest, _ := http.NewRequest("POST", fullUrl, nil)
 
-	var appResponse struct{}
-	getJSON(newClient, appRequest, &appResponse)
+	listRequest, _ := http.NewRequest("POST", fullUrl, strings.NewReader(c.Request.Form.Encode()))
+	listRequest.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	listRequest.Header.Add("Content-Length", strconv.Itoa(len(c.Request.Form.Encode())))
+	var appResponse map[string]interface{}
+		getJSON(newClient, listRequest, &appResponse)
 
 	c.JSON(http.StatusOK, appResponse)
 }
 
 func main() {
 	port := os.Getenv("PORT")
-
 	if port == "" {
 		log.Fatal("$PORT must be set")
 	}
